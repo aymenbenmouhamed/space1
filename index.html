@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="SPACELIGHTS" />
+<title>SPACELIGHTS Notifications</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #f0f0f0; min-height: 100vh; padding: 2rem 1.25rem 3rem; }
+  h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: 0.08em; color: #fff; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 0.75rem; color: #555; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 2rem; }
+  .card { background: #14141c; border: 1px solid #222230; border-radius: 16px; padding: 1.25rem; margin-bottom: 1rem; }
+  .card-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: #555; margin-bottom: 1rem; }
+  label { font-size: 0.75rem; color: #888; display: block; margin-bottom: 5px; }
+  input[type="text"], input[type="number"], input[type="time"], textarea {
+    width: 100%; background: #0e0e16; border: 1px solid #2a2a3a; border-radius: 10px;
+    color: #f0f0f0; font-size: 0.9rem; padding: 0.6rem 0.85rem; outline: none; margin-bottom: 0.85rem;
+    font-family: inherit;
+  }
+  textarea { resize: vertical; min-height: 60px; line-height: 1.5; }
+  input:focus, textarea:focus { border-color: #7c5cfc; }
+  input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .range-wrap { margin-bottom: 0.85rem; }
+  .range-wrap label { display: flex; justify-content: space-between; }
+  .range-wrap label span { color: #c0b0ff; font-weight: 600; }
+  input[type="range"] { width: 100%; accent-color: #7c5cfc; margin-top: 4px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.85rem; }
+  .tag { background: #1e1a2e; border: 1px solid #3a3060; border-radius: 6px; padding: 3px 10px; font-size: 0.72rem; color: #a090ff; cursor: pointer; user-select: none; }
+  .tag:active { background: #2e2a4e; }
+  .btn { display: block; width: 100%; padding: 0.9rem; border-radius: 12px; border: none; font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; margin-bottom: 0.75rem; transition: opacity 0.15s, transform 0.1s; }
+  .btn:active { transform: scale(0.97); opacity: 0.85; }
+  .btn-perm { background: #1e1e2e; color: #a090ff; border: 1px solid #3a3a5a; }
+  .btn-fire { background: #7c5cfc; color: #fff; }
+  .btn-stop { background: #2a1a1a; color: #f08080; border: 1px solid #5a2a2a; display: none; }
+  .info { background: #0d1a2a; border: 1px solid #1a3a5a; border-radius: 12px; padding: 1rem; font-size: 0.8rem; color: #6ab0e0; line-height: 1.6; margin-bottom: 1rem; }
+  .warn { background: #1a1200; border: 1px solid #4a3800; border-radius: 12px; padding: 1rem; font-size: 0.8rem; color: #d4a800; line-height: 1.6; margin-bottom: 1rem; display: none; }
+  .log { background: #0a0a0f; border: 1px solid #1a1a2a; border-radius: 12px; padding: 1rem; font-size: 0.8rem; color: #888; min-height: 50px; line-height: 1.6; }
+  .log.active { color: #a0d0a0; border-color: #1a3a1a; }
+  .countdown { background: #0d0d1a; border: 1px solid #2a2a4a; border-radius: 12px; padding: 1rem; font-size: 1rem; color: #c0b0ff; text-align: center; font-weight: 600; margin-bottom: 0.75rem; display: none; }
+  .preview { background: #1a1a2a; border: 1px solid #2a2a3a; border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 1rem; }
+  .preview-title { font-size: 0.7rem; color: #555; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.5rem; }
+  .preview-notif { background: #f2f2f7; border-radius: 10px; padding: 0.75rem 1rem; }
+  .preview-notif .notif-title { font-size: 0.78rem; font-weight: 700; color: #000; }
+  .preview-notif .notif-body { font-size: 0.75rem; color: #444; margin-top: 2px; line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<h1>SPACELIGHTS</h1>
+<p class="subtitle">order notification simulator</p>
+
+<audio id="notifSound" src="sound.mp3" preload="auto"></audio>
+
+<div class="info">
+  📱 <strong>iPhone setup:</strong> Open in Safari → tap Share → "Add to Home Screen" → open from home screen → tap Enable Notifications → allow.
+</div>
+
+<div id="warnBox" class="warn">
+  ⚠️ Notification permission not granted. Tap "Enable Notifications" and allow when prompted.
+</div>
+
+<div class="card">
+  <p class="card-label">store settings</p>
+  <div class="row">
+    <div>
+      <label>store name</label>
+      <input type="text" id="storeName" value="SPACELIGHTS" oninput="updatePreview()" />
+    </div>
+    <div>
+      <label>currency</label>
+      <input type="text" id="currency" value="TND" oninput="updatePreview()" />
+    </div>
+  </div>
+  <label>logo icon url (optional)</label>
+  <input type="text" id="iconUrl" placeholder="https://your-logo.com/logo.png" />
+</div>
+
+<div class="card">
+  <p class="card-label">notification content</p>
+
+  <label>title template</label>
+  <div class="tags">
+    <span class="tag" onclick="insertTag('notifTitle','{num}')">+ {num} order number</span>
+    <span class="tag" onclick="insertTag('notifTitle','{name}')">+ {name} store name</span>
+    <span class="tag" onclick="insertTag('notifTitle','{amount}')">+ {amount}</span>
+    <span class="tag" onclick="insertTag('notifTitle','{currency}')">+ {currency}</span>
+    <span class="tag" onclick="insertTag('notifTitle','{customer}')">+ {customer}</span>
+  </div>
+  <input type="text" id="notifTitle" value="Order #{num} from {name}" oninput="updatePreview()" />
+
+  <label>description template</label>
+  <div class="tags">
+    <span class="tag" onclick="insertTag('notifBody','{num}')">+ {num} order number</span>
+    <span class="tag" onclick="insertTag('notifBody','{name}')">+ {name} store name</span>
+    <span class="tag" onclick="insertTag('notifBody','{amount}')">+ {amount}</span>
+    <span class="tag" onclick="insertTag('notifBody','{currency}')">+ {currency}</span>
+    <span class="tag" onclick="insertTag('notifBody','{customer}')">+ {customer}</span>
+  </div>
+  <textarea id="notifBody" oninput="updatePreview()">{customer} placed an order — {amount} {currency}</textarea>
+</div>
+
+<div class="card">
+  <p class="card-label">order settings</p>
+  <div class="row">
+    <div>
+      <label>starting order number</label>
+      <input type="number" id="startOrder" value="7184" min="1" oninput="updatePreview()" />
+    </div>
+    <div>
+      <label>number of orders</label>
+      <input type="number" id="orderCount" value="5" min="1" max="50" />
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>fixed amount</label>
+      <input type="number" id="fixedAmount" value="265" min="1" oninput="updatePreview()" />
+    </div>
+    <div>
+      <label>currency</label>
+      <input type="text" id="currency2" value="TND" oninput="document.getElementById('currency').value=this.value; updatePreview()" />
+    </div>
+  </div>
+  <div class="range-wrap">
+    <label>interval between (seconds) <span id="intervalOut">3</span></label>
+    <input type="range" min="1" max="30" value="3" step="1" id="interval" oninput="document.getElementById('intervalOut').textContent=this.value" />
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-label">schedule</p>
+  <div class="row">
+    <div>
+      <label>start time (leave empty = now)</label>
+      <input type="time" id="startTime" />
+    </div>
+    <div>
+      <label>timezone</label>
+      <input type="text" value="Africa/Tunis" readonly style="color:#555;" />
+    </div>
+  </div>
+</div>
+
+<div class="preview">
+  <p class="preview-title">notification preview</p>
+  <div class="preview-notif">
+    <div class="notif-title" id="prevTitle">Order #7184 from SPACELIGHTS</div>
+    <div class="notif-body" id="prevBody">Ahmed Ben Ali placed an order — 265 TND</div>
+  </div>
+</div>
+
+<button class="btn btn-perm" onclick="requestPermission()">🔔 enable notifications</button>
+<div class="countdown" id="countdown"></div>
+<button class="btn btn-fire" id="startBtn" onclick="startFiring()">▶ fire notifications</button>
+<button class="btn btn-stop" id="stopBtn" onclick="stopFiring()">⏹ stop</button>
+
+<div class="log" id="log">ready — press fire to start</div>
+
+<script>
+const firstNames = ['Ahmed','Mohamed','Sarra','Yasmine','Karim','Nour','Amine','Rania','Omar','Fatma','Walid','Ines','Bilel','Salma','Youssef','Lina','Hatem','Meriem','Tarek','Dorra'];
+const lastNames = ['Ben Ali','Chaabane','Trabelsi','Mansouri','Hamdi','Oueslati','Bouchnak','Gharbi','Miled','Jebali','Khelifi','Sfaxi','Dridi','Toumi','Saad'];
+
+let firing = false, timer = null, countdownTimer = null, count = 0, total = 0, currentOrder = 7184;
+
+function rand(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+function resolve(template, num, name, customer, amount, currency){
+  return template
+    .replace(/\{num\}/g, '#' + num)
+    .replace(/\{name\}/g, name)
+    .replace(/\{customer\}/g, customer)
+    .replace(/\{amount\}/g, amount)
+    .replace(/\{currency\}/g, currency);
+}
+
+function insertTag(fieldId, tag){
+  const el = document.getElementById(fieldId);
+  const start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.slice(0,start) + tag + el.value.slice(end);
+  el.selectionStart = el.selectionEnd = start + tag.length;
+  el.focus();
+  updatePreview();
+}
+
+function updatePreview(){
+  const store = document.getElementById('storeName').value || 'SPACELIGHTS';
+  const currency = document.getElementById('currency').value || 'TND';
+  const startOrder = parseInt(document.getElementById('startOrder').value) || 7184;
+  const amount = document.getElementById('fixedAmount').value || '265';
+  const titleTpl = document.getElementById('notifTitle').value;
+  const bodyTpl = document.getElementById('notifBody').value;
+  const customer = 'Ahmed Ben Ali';
+  document.getElementById('prevTitle').textContent = resolve(titleTpl, startOrder, store, customer, amount, currency);
+  document.getElementById('prevBody').textContent = resolve(bodyTpl, startOrder, store, customer, amount, currency);
+}
+
+function log(msg, active){
+  const el = document.getElementById('log');
+  el.textContent = msg;
+  el.className = 'log' + (active ? ' active' : '');
+}
+
+function playSound(){
+  const audio = document.getElementById('notifSound');
+  if(audio){ audio.currentTime = 0; audio.play().catch(()=>{}); }
+}
+
+async function requestPermission(){
+  if(!('Notification' in window)){ log('notifications not supported in this browser'); return; }
+  const p = await Notification.requestPermission();
+  if(p === 'granted'){
+    log('✅ notifications enabled! ready to fire.', true);
+    document.getElementById('warnBox').style.display = 'none';
+  } else {
+    document.getElementById('warnBox').style.display = 'block';
+    log('permission denied — check browser settings');
+  }
+}
+
+function fireOne(){
+  if(!('Notification' in window) || Notification.permission !== 'granted'){
+    document.getElementById('warnBox').style.display = 'block';
+    log('please enable notifications first'); stopFiring(); return;
+  }
+  const store = document.getElementById('storeName').value || 'SPACELIGHTS';
+  const currency = document.getElementById('currency').value || 'TND';
+  const amount = document.getElementById('fixedAmount').value || '265';
+  const icon = document.getElementById('iconUrl').value.trim();
+  const titleTpl = document.getElementById('notifTitle').value;
+  const bodyTpl = document.getElementById('notifBody').value;
+  const customer = rand(firstNames) + ' ' + rand(lastNames);
+
+  const title = resolve(titleTpl, currentOrder, store, customer, amount, currency);
+  const body = resolve(bodyTpl, currentOrder, store, customer, amount, currency);
+
+  const opts = { body, tag: 'order-' + currentOrder, silent: true };
+  if(icon){ opts.icon = icon; opts.badge = icon; }
+
+  new Notification(title, opts);
+  playSound();
+  count++;
+  currentOrder++;
+  log('📦 ' + count + '/' + total + ' — ' + title, true);
+  if(count >= total) stopFiring();
+}
+
+function startFiring(){
+  if(!('Notification' in window) || Notification.permission !== 'granted'){
+    document.getElementById('warnBox').style.display = 'block';
+    log('please enable notifications first'); return;
+  }
+  count = 0;
+  total = parseInt(document.getElementById('orderCount').value) || 5;
+  currentOrder = parseInt(document.getElementById('startOrder').value) || 7184;
+  const interval = parseInt(document.getElementById('interval').value) || 3;
+  const timeInput = document.getElementById('startTime').value;
+
+  firing = true;
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'block';
+
+  if(timeInput){
+    const now = new Date();
+    const [h, m] = timeInput.split(':').map(Number);
+    const target = new Date();
+    target.setHours(h, m, 0, 0);
+    if(target <= now) target.setDate(target.getDate() + 1);
+
+    const cdEl = document.getElementById('countdown');
+    cdEl.style.display = 'block';
+
+    countdownTimer = setInterval(()=>{
+      if(!firing){ clearInterval(countdownTimer); cdEl.style.display='none'; return; }
+      const rem = target - new Date();
+      if(rem <= 0){
+        clearInterval(countdownTimer);
+        cdEl.style.display = 'none';
+        beginSequence(interval);
+        return;
+      }
+      const mm = Math.floor(rem/60000);
+      const ss = Math.floor((rem%60000)/1000);
+      cdEl.textContent = '⏰ starting in ' + mm + 'm ' + ss + 's';
+      log('⏰ scheduled for ' + timeInput + ' — ' + mm + 'm ' + ss + 's remaining');
+    }, 1000);
+  } else {
+    beginSequence(interval);
+  }
+}
+
+function beginSequence(interval){
+  log('🚀 firing ' + total + ' notifications every ' + interval + 's...', true);
+  fireOne();
+  timer = setInterval(()=>{ if(!firing) return; fireOne(); }, interval * 1000);
+}
+
+function stopFiring(){
+  firing = false;
+  clearInterval(timer);
+  clearInterval(countdownTimer);
+  document.getElementById('countdown').style.display = 'none';
+  document.getElementById('stopBtn').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'block';
+  if(count >= total && total > 0) log('✅ done! sent ' + count + ' notifications.');
+  else log('⏹ stopped after ' + count + ' notifications.');
+}
+
+updatePreview();
+</script>
+</body>
+</html>
